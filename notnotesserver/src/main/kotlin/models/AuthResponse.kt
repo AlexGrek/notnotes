@@ -1,4 +1,5 @@
-package com.notnotes.models
+package org.notnotes.models
+import kotlinx.serialization.Serializable
 
-class AuthResponse {
-}
+@Serializable
+data class AuthResponse(val token: String)

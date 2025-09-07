@@ -1,4 +1,98 @@
 package org.notnotes.models
 
-class NoteNode {
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import org.bson.codecs.pojo.annotations.BsonId
+import org.bson.types.ObjectId
+import org.litote.kmongo.newId
+import org.notnotes.auth.sha256Hex
+
+@Serializable
+enum class AccessLevel {
+    READ,
+    EDIT,
+    ADMIN
 }
+
+@JvmInline
+@Serializable
+value class Id<T>(@Contextual val value: ObjectId)
+
+/**
+ * A base sealed class for all nodes in the notes tree.
+ * With the modern driver, @Serializable on a sealed class is enough
+ * to enable polymorphism. The @BsonPolymorphic annotation is not needed.
+ */
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type"
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = NoteRecord::class, name = "NoteRecord"),
+    JsonSubTypes.Type(value = NoteDirectory::class, name = "NoteDirectory")
+)
+@Serializable
+sealed class NoteNode {
+    @get:BsonId
+    @Contextual
+    abstract val id: Id<NoteNode>
+    // ... rest of the sealed class is the same
+    @Contextual
+    abstract val parent: Id<NoteNode>?
+    @Contextual
+    abstract var children: List<Id<NoteNode>>
+    abstract var name: String
+    @Contextual
+    abstract val ownerId: Id<User>
+    abstract var sharedWith: Map<String, AccessLevel>
+    abstract var treeLastModTimestamp: Instant
+}
+
+/**
+ * Represents a note with content (data). It can also have children, acting as a directory.
+ */
+@Serializable
+data class NoteRecord(
+    @Contextual
+    @param:BsonId
+    override val id: Id<NoteNode> = Id(newId()),
+    @Contextual
+    override val parent: Id<NoteNode>? = null,
+    @Contextual
+    override var children: List<Id<NoteNode>> = emptyList(),
+    override var name: String,
+    @Contextual
+    override val ownerId: Id<User>,
+    override var sharedWith: Map<String, AccessLevel> = emptyMap(),
+    override var treeLastModTimestamp: Instant = Clock.System.now(),
+
+    // NoteRecord-specific fields
+    var data: String? = null, // The actual markdown content
+    var history: List<String> = emptyList(), // List of previous versions of 'data'
+    var attachments: List<String> = emptyList(), // List of attachment identifiers
+    var updateTimestamp: Instant = Clock.System.now(), // Timestamp of the note's own content modification
+    var sha256hex: String = sha256Hex(data ?: "")
+) : NoteNode()
+
+/**
+ * Represents a directory. It cannot have a body ('data') but can contain other nodes.
+ */
+@Serializable
+data class NoteDirectory(
+    @Contextual
+    @param:BsonId
+    override val id: Id<NoteNode> = newId(),
+    @Contextual
+    override val parent: Id<NoteNode>? = null,
+    @Contextual
+    override var children: List<Id<NoteNode>> = emptyList(),
+    override var name: String,
+    override val ownerId: Id<User>,
+    override var sharedWith: Map<String, AccessLevel> = emptyMap(),
+    override var treeLastModTimestamp: Instant = Clock.System.now()
+) : NoteNode()

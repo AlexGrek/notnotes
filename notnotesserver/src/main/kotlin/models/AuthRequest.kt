@@ -1,4 +1,8 @@
-package com.notnotes.models
+package org.notnotes.models
+import kotlinx.serialization.Serializable
 
-class AuthRequest {
-}
+@Serializable
+data class RegisterRequest(val email: String, val password: String)
+
+@Serializable
+data class LoginRequest(val email: String, val password: String)
