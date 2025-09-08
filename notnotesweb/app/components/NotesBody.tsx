@@ -38,11 +38,28 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
     const [loading, setLoading] = useState(true);
     const [note, setNote] = useState<NoteRecordRepresentation | null>(noteOpen);
     const [data, setData] = useState("");
+    const [savedState, setSavedState] = useState("");
+    const [initialLoad, setInitialLoad] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [info, setInfo] = useState<string | null>(null);
     const [syncState, setSyncState] = useState<SyncState>('synced');
 
     // Ref to prevent the debouncer from running on the initial data load
     const isInitialMount = useRef(true);
+
+    const saveStateAsSaved = (noteNameArg?: string | null) => {
+        let noteName = (note?.name || "");
+        if (noteNameArg != undefined && noteNameArg != null) {
+            noteName = noteNameArg;
+        }
+        setSavedState(data + " " + noteName)
+    }
+
+    const hasUnsavedChanges = () => {
+        const newDigest = data + " " + (note?.name || "")
+        // setInfo(`Saved state: ${savedState}; newDigest: ${newDigest}`)
+        return newDigest != savedState
+    }
 
     const loadData = async () => {
         if (!noteOpen) return;
@@ -59,8 +76,10 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
             }
 
             const jsonData = await response.json();
+            setInitialLoad(true)
             setNote(jsonData); // Also update the note object itself if needed
             setData(jsonData.data || ""); // Ensure data is not null
+            saveStateAsSaved(noteOpen.name);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load notes';
             setError(errorMessage);
@@ -74,6 +93,10 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
     // Memoize sendData to ensure the debouncing effect has a stable reference
     const sendData = useCallback(async () => {
         if (!noteOpen) return;
+        if (!hasUnsavedChanges()) {
+            setSyncState('synced')
+            return;
+        }
         setSyncState('saving');
         try {
             const response = await authFetch(`/api/v1/notes/update_note`, {
@@ -90,6 +113,7 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             setSyncState('synced');
+            saveStateAsSaved();
         } catch (err) {
             setSyncState('error');
             console.error('Failed to save note:', err);
@@ -99,6 +123,7 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
     // Effect to handle the initial loading of a note
     useEffect(() => {
         if (noteOpen) {
+            setSavedState("");
             loadData();
         }
     }, [noteOpen]);
@@ -109,6 +134,11 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
         // Don't run on the very first load/render
         if (isInitialMount.current) {
             isInitialMount.current = false;
+            return;
+        }
+
+        if (initialLoad) {
+            setInitialLoad(false);
             return;
         }
 
@@ -168,7 +198,8 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
             )}
             <div className="flex-grow">
                 <MDXEditor
-                    className="dark-theme dark-editor"
+                    key={noteOpen?.id.id}
+                    className="dark-theme dark-editor h-100"
                     markdown={data}
                     onChange={setData}
                     plugins={[
@@ -196,6 +227,7 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
 
                     ]}
                 />
+                <p className="font-mono opacity-45 m-2"><small>{info && info}</small></p>
             </div>
         </div>
     );

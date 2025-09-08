@@ -63,7 +63,7 @@ class NotesManager(private val repo: NoteNodesRepository) {
         if (lastInHistory == "" && body.length > 3) {
             node.history += body
         }
-        
+
         node.updateTimestamp = Clock.System.now()
         repo.updateNoteNode(node)
     }

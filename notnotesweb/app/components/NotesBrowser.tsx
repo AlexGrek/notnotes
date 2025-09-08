@@ -1,5 +1,20 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ArrowUp, FileDown, FilePlus, FilePlus2, FileText, Folder, FolderPlus, Home, PlusSquare, RefreshCw } from "lucide-react";
+import {
+    ArrowRight,
+    ArrowUp,
+    FileDown,
+    FilePlus,
+    FilePlus2,
+    FileText,
+    Folder,
+    FolderPlus,
+    Home,
+    PlusSquare,
+    RefreshCw,
+    Trash2,
+    Share2,
+    Globe
+} from "lucide-react";
 import React, { useCallback } from "react";
 import { useEffect, useState } from "react";
 import { isNoteRecordRepresentation, parseNoteRoot, type NoteNodeRepresentation, type NoteRecordRepresentation, type NoteRootRepresentation } from "~/models";
@@ -62,15 +77,15 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
     };
 
     const handleNodeClick = (node: NoteNodeRepresentation) => {
+        // If it's a note with content, notify the parent component to display it
         if (isNoteRecordRepresentation(node)) {
             onNoteClicked(node);
         }
 
-        // Navigate into the node if it has children
-        if (node.children.length > 0) {
-            setCurrentPath([...currentPath, { id: node.id.id, name: node.name }]);
-            setCurrentNodes(node.children);
-        }
+        // Always treat the clicked node as a container and navigate into it.
+        // If it has no children, the view will correctly show an empty state.
+        setCurrentPath([...currentPath, { id: node.id.id, name: node.name }]);
+        setCurrentNodes(node.children);
     };
 
     const handleGoUp = () => {
@@ -91,7 +106,7 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
     };
 
     const handleCreateDirectory = useCallback(async () => {
-
+        // TODO: Implement directory creation logic
     }, [currentPath])
 
     const handleCreateNote = useCallback(async () => {
@@ -116,8 +131,8 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
 
             loadData()
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load notes');
-            console.error('Failed to load notes:', err);
+            setError(err instanceof Error ? err.message : 'Failed to create note');
+            console.error('Failed to create note:', err);
         } finally {
             setLoading(false);
         }
@@ -169,7 +184,7 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
     }
 
     return (
-        <div className="bg-neutral-900 text-gray-100 rounded-lg overflow-hidden min-h-96">
+        <div className="bg-neutral-900 text-gray-100 rounded-lg overflow-hidden min-h-96 flex flex-col">
             {/* Header with path and navigation */}
             <div className="bg-neutral-800 border-b border-neutral-700 p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -240,8 +255,33 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
                 </div>
             </div>
 
+            {/* Action Menu */}
+            <div className="bg-neutral-800 border-b border-neutral-700 p-2 flex items-center space-x-2">
+                <button
+                    title="Delete"
+                    className="p-2 text-neutral-400 hover:text-red-400 hover:bg-neutral-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:hover:text-neutral-400"
+                // disabled={!selectedItem} // Example disabled state
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                    title="Share"
+                    className="p-2 text-neutral-400 hover:text-blue-400 hover:bg-neutral-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:hover:text-neutral-400"
+                // disabled={!selectedItem}
+                >
+                    <Share2 className="w-4 h-4" />
+                </button>
+                <button
+                    title="Publish"
+                    className="p-2 text-neutral-400 hover:text-green-400 hover:bg-neutral-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:hover:text-neutral-400"
+                // disabled={!selectedItem}
+                >
+                    <Globe className="w-4 h-4" />
+                </button>
+            </div>
+
             {/* File browser content */}
-            <div className="p-4">
+            <div className="p-4 flex-grow">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentPath.map(p => p.id).join('/')}
@@ -254,8 +294,16 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
                         {currentNodes.length === 0 ? (
                             <div className="text-gray-500 text-center py-8">
                                 This folder is empty
-                                <button onClick={handleCreateDirectory}><PlusSquare /></button>
-                                <button onClick={handleCreateNote}><FilePlus2 /></button>
+                                <div className="flex justify-center space-x-4 mt-4">
+                                    <button onClick={handleCreateDirectory} className="flex flex-col items-center p-4 rounded-lg hover:bg-neutral-800 transition-colors duration-200">
+                                        <FolderPlus className="w-8 h-8 mb-1" />
+                                        <span>New Directory</span>
+                                    </button>
+                                    <button onClick={handleCreateNote} className="flex flex-col items-center p-4 rounded-lg hover:bg-neutral-800 transition-colors duration-200">
+                                        <FilePlus2 className="w-8 h-8 mb-1" />
+                                        <span>New Note</span>
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             currentNodes.map((node) => (
@@ -275,7 +323,7 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
                                     </div>
 
                                     <div className="flex-grow min-w-0">
-                                        <div className="font-medium truncate">{node.name}</div>
+                                        <div className="font-medium truncate">{node.name || <span className="italic text-neutral-500">Untitled</span>}</div>
                                         <div className="text-xs text-gray-400 flex items-center space-x-2">
                                             <span>
                                                 {isNoteRecordRepresentation(node) ? 'Note' : 'Directory'}
@@ -295,11 +343,8 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
                                 </motion.div>
                             ))
                         )}
-
                     </motion.div>
                 </AnimatePresence>
-                <button className="cursor-pointer flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-700 transition-colors duration-200" onClick={handleCreateDirectory}><PlusSquare /><p>New directory</p></button>
-                <button className="cursor-pointer flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-700 transition-colors duration-200" onClick={handleCreateNote}><FilePlus2 /><p>New note</p></button>
             </div>
         </div>
     );
