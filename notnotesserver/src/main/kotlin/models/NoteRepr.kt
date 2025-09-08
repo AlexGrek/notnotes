@@ -16,7 +16,7 @@ data class NoteRoot(
     @Contextual
     val id: String = newId<NoteRoot>().toString(),
     @Contextual
-                    val owner: Id<User>,
+                    val owner: String,
     @Contextual
                     var rootNodes: List<Id<NoteNode>>,
     @Contextual
@@ -27,7 +27,7 @@ data class NoteRootRepresentation(@param:BsonId
                                   @Contextual
                                   val id: String,
                                   @Contextual
-                    val owner: Id<User>,
+                    val owner: String,
                                   @Contextual
                     val rootNodes: List<NoteNodeRepresentation>,
                                   @Contextual
@@ -38,7 +38,7 @@ sealed class NoteNodeRepresentation {
     @Contextual
     abstract val id: Id<NoteNode>
     abstract val name: String
-    abstract val ownerId: Id<User>
+    abstract val ownerId: String
     abstract val sharedWith: Map<String, AccessLevel>
     abstract val children: List<NoteNodeRepresentation>
     abstract val treeLastModTimestamp: Instant
@@ -51,7 +51,7 @@ data class NoteRecordRepresentation(
     override val children: List<NoteNodeRepresentation> = emptyList(),
     override val name: String,
     @Contextual
-    override val ownerId: Id<User>,
+    override val ownerId: String,
     override val sharedWith: Map<String, AccessLevel> = emptyMap(),
     override val treeLastModTimestamp: Instant = Clock.System.now(),
 
@@ -70,7 +70,7 @@ data class NoteDirectoryRepresentation(
     override val children: List<NoteNodeRepresentation> = emptyList(),
     override val name: String,
     @Contextual
-    override val ownerId: Id<User>,
+    override val ownerId: String,
     override val sharedWith: Map<String, AccessLevel> = emptyMap(),
     override val treeLastModTimestamp: Instant = Clock.System.now()
 ) : NoteNodeRepresentation()

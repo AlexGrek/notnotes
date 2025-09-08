@@ -14,6 +14,8 @@ import org.notnotes.models.CreateNoteRequest
 import org.notnotes.models.LoginRequest
 import org.notnotes.models.NoteNode
 import org.notnotes.models.NotesManager
+import org.notnotes.models.UpdateNoteRequest
+import org.notnotes.models.User
 import org.notnotes.plugins.UserPrincipal
 
 fun Route.notesRoutes() {
@@ -25,7 +27,7 @@ fun Route.notesRoutes() {
             val principal = call.principal<UserPrincipal>()
             val userEmail = principal?.payload?.getClaim("email")?.asString() ?: throw Exception("No user email in claims")
             val user = userRepo.findUserByEmail(userEmail) ?: throw Exception("User not found or disabled")
-            val tree = manager.fetchNotesTree(user.id)
+            val tree = manager.fetchNotesTree(user)
             call.respond(tree)
         }
 
@@ -34,7 +36,16 @@ fun Route.notesRoutes() {
             val principal = call.principal<UserPrincipal>()
             val userEmail = principal?.payload?.getClaim("email")?.asString() ?: throw Exception("No user email in claims")
             val user = userRepo.findUserByEmail(userEmail) ?: throw Exception("User not found or disabled")
-            val tree = manager.createNote(request.parent?.toId(), request.name, request.body, request.attachments, owner = user.id)
+            val tree = manager.createNote(request.parent, request.name, request.body, request.attachments, owner = user.email)
+            call.respond(tree)
+        }
+
+        post("/update_note") {
+            val request = call.receive<UpdateNoteRequest>()
+            val principal = call.principal<UserPrincipal>()
+            val userEmail = principal?.payload?.getClaim("email")?.asString() ?: throw Exception("No user email in claims")
+            val user = userRepo.findUserByEmail(userEmail) ?: throw Exception("User not found or disabled")
+            val tree = manager.updateNote(request.id, request.body, request.name, request.attachments, user = user.email)
             call.respond(tree)
         }
 
@@ -43,7 +54,7 @@ fun Route.notesRoutes() {
             val id = call.request.queryParameters["id"] ?: throw Exception("No ?id parameter")
             val userEmail = principal?.payload?.getClaim("email")?.asString() ?: throw Exception("No user email in claims")
             val user = userRepo.findUserByEmail(userEmail) ?: throw Exception("User not found or disabled")
-            val body = manager.fetchNoteBody(id.toId<NoteNode>(), user.id)
+            val body = manager.fetchNoteBody(id, user.id.toString())
             call.respond(body)
         }
     }

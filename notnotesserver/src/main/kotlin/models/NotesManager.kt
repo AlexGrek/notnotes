@@ -1,28 +1,32 @@
 package org.notnotes.models
 
+import kotlinx.datetime.Clock
 import org.litote.kmongo.Id
+import org.litote.kmongo.id.WrappedObjectId
 import org.notnotes.auth.sha256Hex
 import org.notnotes.db.NoteNodesRepository
+import org.litote.kmongo.toId
+import org.notnotes.utils.stringSimilarity
 
 class NotesManager(private val repo: NoteNodesRepository) {
-    suspend fun fetchNotesTree(userId: Id<User>): NoteRootRepresentation {
-        return repo.getUserNotesRootRepresentation(userId, false)
+    suspend fun fetchNotesTree(user: User): NoteRootRepresentation {
+        return repo.getUserNotesRootRepresentation(user, false)
     }
 
-    suspend fun fetchNoteBody(note: Id<NoteNode>, user: Id<User>): NoteNode {
+    suspend fun fetchNoteBody(note: String, user: String): NoteNode {
         // todo: check access rights
-        return repo.getNodeById(note)
+        return repo.getNodeByStringId(note)
     }
 
     suspend fun createNote(
-        parent: Id<NoteNode>?,
+        parent: String?,
         name: String,
         body: String,
         attachments: List<String>,
-        owner: Id<User>
+        owner: String
     ) {
         val newNode = NoteRecord(
-            parent = parent,
+            parent = null,
             name = name,
             data = body,
             ownerId = owner,
@@ -33,32 +37,36 @@ class NotesManager(private val repo: NoteNodesRepository) {
     }
 
     suspend fun createDirectory(
-        parent: Id<NoteNode>?,
+        parent: String?,
         name: String,
-        owner: Id<User>
+        owner: String
     ) {
         val newNode = NoteDirectory(
-            parent = parent,
+            parent = null,
             name = name,
             ownerId = owner
         )
 
-        repo.createNoteNodeTransactional(newNode, parent, owner)
+        repo.createNoteNodeSimple(newNode, parent, owner)
     }
 
-    suspend fun updateNote(id: Id<NoteNode>, body: String, attachments: List<String>, user: Id<User>) {
+    suspend fun updateNote(id: String, body: String, name: String, attachments: List<String>, user: String) {
         val node = fetchNoteBody(id, user) as? NoteRecord ?: throw NoSuchElementException("Note with id $id not found")
         checkAccessUpdate(node, user)
         node.data = body
+        node.name = name
         node.attachments = attachments
         node.sha256hex = sha256Hex(body)
-        node.history += body
+        val lastInHistory = if (node.history.isNotEmpty()) node.history.last() else  ""
+        if (stringSimilarity(lastInHistory, body) > 0.2)
+            node.history += body
+        node.updateTimestamp = Clock.System.now()
         repo.updateNoteNode(node)
     }
 
     private fun checkAccessUpdate(
         node: NoteRecord,
-        user: Id<User>
+        user: String
     ) {
         // TODO: check access
     }

@@ -14,8 +14,10 @@ import org.notnotes.models.NoteRoot
 import org.notnotes.models.NoteRootRepresentation
 import org.notnotes.models.User
 import com.mongodb.reactivestreams.client.ClientSession
+import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.CoroutineClient
 import org.litote.kmongo.coroutine.CoroutineDatabase
+import org.litote.kmongo.toId
 
 
 class NoteNodesRepository(
@@ -27,8 +29,8 @@ class NoteNodesRepository(
 
     suspend fun createNoteNodeTransactional(
         node: NoteNode,
-        parent: Id<NoteNode>?,
-        owner: Id<User>,
+        parent: String?,
+        owner: String,
     ) {
         val session: ClientSession = client.startSession() // <-- from reactive driver
         try {
@@ -37,9 +39,10 @@ class NoteNodesRepository(
             notesCollection.insertOne(session, node)
 
             if (parent != null) {
-                val parentNode = notesCollection.findOneById(parent)
+                val parentNode = notesCollection.findOneById(ObjectId(parent.toId<NoteNode>().toString()))
                     ?: throw NoSuchElementException("Parent not found")
                 parentNode.children += node.id
+                node.parent = parentNode.id
                 notesCollection.updateOneById(session, parent, parentNode)
             } else {
                 val root = notesRootCollection.findOne(NoteRoot::owner eq owner)
@@ -59,14 +62,16 @@ class NoteNodesRepository(
 
     suspend fun createNoteNodeSimple(
         node: NoteNode,
-        parent: Id<NoteNode>?,
-        owner: Id<User>,
+        parent: String?,
+        owner: String,
     ) {
             if (parent != null) {
-                val parentNode = notesCollection.findOneById(parent)
+                val parentId = ObjectId(parent.toId<NoteNode>().toString())
+                val parentNode = notesCollection.findOneById(parentId)
                     ?: throw NoSuchElementException("Parent $parent not found")
                 parentNode.children += node.id
-                notesCollection.updateOneById(parent, parentNode)
+                node.parent = parentNode.id
+                notesCollection.updateOneById(parentId, parentNode)
             } else {
                 val root = notesRootCollection.findOne(NoteRoot::owner eq owner)
                     ?: throw NoSuchElementException("Root for $owner not found for user $owner")
@@ -76,28 +81,18 @@ class NoteNodesRepository(
         notesCollection.insertOne(node)
     }
 
-    suspend fun getUserNotesRoot(user: Id<User>): NoteRoot? {
+    suspend fun getUserNotesRoot(user: String): NoteRoot? {
         return notesRootCollection.findOne(NoteRoot::owner eq user)
     }
 
     suspend fun getNodeById(id: Id<NoteNode>): NoteNode {
-        println(id.javaClass)
-        println("Expecting:")
-        println(id)
-        notesCollection.find().toList().listIterator().forEach {
-            println(it.id)
-            val req_id = it.id
-            if (it.id == id) {
-                println("Here is our hero!")
-            }
-            else if (it.id.toString() == id.toString()) {
-                print("Here is out toString hero!")
-            } else {
-                println("$req_id != $id")
-            }
-        }
         return notesCollection.findOneById(id)
             ?: throw NoSuchElementException("Node with id $id not found")
+    }
+
+    suspend fun getNodeByStringId(sid: String): NoteNode {
+        return notesCollection.findOneById(ObjectId(sid.toId<NoteNode>().toString()))
+            ?: throw NoSuchElementException("Node with id $sid not found")
     }
 
     suspend fun getNodeWithoutContentById(id: Id<NoteNode>): NoteNode {
@@ -109,8 +104,8 @@ class NoteNodesRepository(
             ?: throw NoSuchElementException("Node with id $id not found")
     }
 
-    suspend fun getUserNotesRootRepresentation(user: Id<User>, includeContent: Boolean): NoteRootRepresentation {
-        val root = getUserNotesRoot(user) as NoteRoot
+    suspend fun getUserNotesRootRepresentation(user: User, includeContent: Boolean): NoteRootRepresentation {
+        val root = getUserNotesRoot(user.email) as NoteRoot
         val owned = traverseList(root.rootNodes, includeContent)
         val shared = traverseList(root.sharedNodes, includeContent)
         return NoteRootRepresentation(id = root.id, owner = root.owner, rootNodes = owned, shared)
@@ -135,7 +130,7 @@ class NoteNodesRepository(
         throw Exception("Unknown type of note node")
     }
 
-    suspend fun createRootForUser(user: Id<User>): Boolean {
+    suspend fun createRootForUser(user: String): Boolean {
         val root = NoteRoot(owner = user, rootNodes = listOf(), sharedNodes = listOf())
         return notesRootCollection.insertOne(root).wasAcknowledged()
     }
@@ -150,8 +145,8 @@ class NoteNodesRepository(
         return notesCollection.updateOneById(session, parent, parentNode).wasAcknowledged()
     }
 
-    suspend fun insertChildToRoot(user: Id<User>, child: Id<NoteNode>, session: ClientSession): Boolean {
-        val parentNode: NoteRoot = getUserNotesRoot(user) ?: throw NoSuchElementException("Root with user $user not found")
+    suspend fun insertChildToRoot(userEmail: String, child: Id<NoteNode>, session: ClientSession): Boolean {
+        val parentNode: NoteRoot = getUserNotesRoot(userEmail) ?: throw NoSuchElementException("Root with user $userEmail not found")
         parentNode.rootNodes += child
         return notesRootCollection.updateOneById(session, parentNode.id, parentNode).wasAcknowledged()
     }

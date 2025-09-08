@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { setAuthToken } from '~/utils';
+import { useNavigate } from 'react-router';
 
 // Animation variants for the form container
 const formVariants = {
@@ -59,10 +61,12 @@ const App = () => {
     verifyToken();
   }, []);
 
+  const navigate = useNavigate();
+
   const handleAuth = async (event: { preventDefault: () => void; }) => {
     event.preventDefault();
     setMessage('');
-    const endpoint = isLoginMode ? '/api/v1/login' : '/api/v1/register';
+    const endpoint = isLoginMode ? '/api/v1/auth/login' : '/api/v1/auth/register';
 
     if (!isLoginMode && password !== confirmPassword) {
       setMessage('Passwords do not match.');
@@ -81,9 +85,10 @@ const App = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('notnotes_auth_token', data.token);
+        setAuthToken(data.token)
         setUserId(data.userId || 'Authenticated User');
         setMessage(isLoginMode ? 'Login successful!' : 'Registration successful! Welcome to Notnotes.');
+        navigate("/core")
       } else {
         setMessage(`Error: ${data.message || 'An unexpected error occurred.'}`);
         setUserId(null);

@@ -8,6 +8,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.types.ObjectId
+import org.litote.kmongo.Id
 import org.litote.kmongo.newId
 import org.notnotes.auth.sha256Hex
 
@@ -17,10 +18,6 @@ enum class AccessLevel {
     EDIT,
     ADMIN
 }
-
-@JvmInline
-@Serializable
-value class Id<T>(@Contextual val value: ObjectId)
 
 /**
  * A base sealed class for all nodes in the notes tree.
@@ -39,16 +36,14 @@ value class Id<T>(@Contextual val value: ObjectId)
 @Serializable
 sealed class NoteNode {
     @get:BsonId
-    @Contextual
     abstract val id: Id<NoteNode>
     // ... rest of the sealed class is the same
-    @Contextual
-    abstract val parent: Id<NoteNode>?
+    abstract var parent: Id<NoteNode>?
     @Contextual
     abstract var children: List<Id<NoteNode>>
     abstract var name: String
     @Contextual
-    abstract val ownerId: Id<User>
+    abstract val ownerId: String
     abstract var sharedWith: Map<String, AccessLevel>
     abstract var treeLastModTimestamp: Instant
 }
@@ -58,16 +53,14 @@ sealed class NoteNode {
  */
 @Serializable
 data class NoteRecord(
-    @Contextual
     @param:BsonId
-    override val id: Id<NoteNode> = Id(newId()),
-    @Contextual
-    override val parent: Id<NoteNode>? = null,
+    override val id: Id<NoteNode> = newId(),
+    override var parent: Id<NoteNode>? = null,
     @Contextual
     override var children: List<Id<NoteNode>> = emptyList(),
     override var name: String,
     @Contextual
-    override val ownerId: Id<User>,
+    override val ownerId: String,
     override var sharedWith: Map<String, AccessLevel> = emptyMap(),
     override var treeLastModTimestamp: Instant = Clock.System.now(),
 
@@ -84,15 +77,13 @@ data class NoteRecord(
  */
 @Serializable
 data class NoteDirectory(
-    @Contextual
     @param:BsonId
     override val id: Id<NoteNode> = newId(),
-    @Contextual
-    override val parent: Id<NoteNode>? = null,
+    override var parent: Id<NoteNode>? = null,
     @Contextual
     override var children: List<Id<NoteNode>> = emptyList(),
     override var name: String,
-    override val ownerId: Id<User>,
+    override val ownerId: String,
     override var sharedWith: Map<String, AccessLevel> = emptyMap(),
     override var treeLastModTimestamp: Instant = Clock.System.now()
 ) : NoteNode()
