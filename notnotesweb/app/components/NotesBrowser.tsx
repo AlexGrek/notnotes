@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ArrowUp, FilePlus2, FileText, Folder, Home, PlusSquare, RefreshCw } from "lucide-react";
+import { ArrowRight, ArrowUp, FileDown, FilePlus, FilePlus2, FileText, Folder, FolderPlus, Home, PlusSquare, RefreshCw } from "lucide-react";
 import React, { useCallback } from "react";
 import { useEffect, useState } from "react";
 import { isNoteRecordRepresentation, parseNoteRoot, type NoteNodeRepresentation, type NoteRecordRepresentation, type NoteRootRepresentation } from "~/models";
@@ -144,7 +144,7 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
 
     if (loading) {
         return (
-            <div className="bg-gray-900 text-gray-100 p-6 rounded-lg min-h-96 flex items-center justify-center">
+            <div className="bg-neutral-900 text-gray-100 p-6 rounded-lg min-h-96 flex items-center justify-center">
                 <div className="flex items-center space-x-2">
                     <RefreshCw className="w-5 h-5 animate-spin" />
                     <span>Loading notes...</span>
@@ -155,11 +155,11 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
 
     if (error) {
         return (
-            <div className="bg-gray-900 text-gray-100 p-6 rounded-lg min-h-96">
+            <div className="bg-neutral-900 text-gray-100 p-6 rounded-lg min-h-96">
                 <div className="text-red-400 mb-4">Error: {error}</div>
                 <button
                     onClick={loadData}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition-colors duration-200 flex items-center space-x-2"
+                    className="px-4 py-2 bg-neutral-600 hover:bg-neutral-700 rounded-md transition-colors duration-200 flex items-center space-x-2"
                 >
                     <RefreshCw className="w-4 h-4" />
                     <span>Retry</span>
@@ -169,9 +169,9 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
     }
 
     return (
-        <div className="bg-gray-900 text-gray-100 rounded-lg overflow-hidden min-h-96">
+        <div className="bg-neutral-900 text-gray-100 rounded-lg overflow-hidden min-h-96">
             {/* Header with path and navigation */}
-            <div className="bg-gray-800 border-b border-gray-700 p-4">
+            <div className="bg-neutral-800 border-b border-neutral-700 p-4">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                         {currentPath.length > 0 && (
@@ -192,6 +192,27 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
                         >
                             <RefreshCw className="w-4 h-4" />
                         </button>
+                        <button
+                            onClick={handleCreateDirectory}
+                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors duration-200"
+                            title="Create directory"
+                        >
+                            <FolderPlus className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={handleCreateNote}
+                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors duration-200"
+                            title="Create note here"
+                        >
+                            <FilePlus className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={handleCreateNote}
+                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors duration-200"
+                            title="Create child note"
+                        >
+                            <FileDown className="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
 
@@ -207,10 +228,10 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
 
                     {currentPath.map((pathItem, index) => (
                         <React.Fragment key={pathItem.id}>
-                            <ArrowRight className="w-3 h-3 text-gray-500" />
+                            <ArrowRight className="w-3 h-3 text-neutral-500" />
                             <button
                                 onClick={() => handlePathClick(index)}
-                                className="px-2 py-1 rounded hover:bg-gray-700 transition-colors duration-200"
+                                className="px-2 py-1 rounded hover:bg-neutral-700 transition-colors duration-200"
                             >
                                 {pathItem.name}
                             </button>

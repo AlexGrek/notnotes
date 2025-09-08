@@ -58,8 +58,12 @@ class NotesManager(private val repo: NoteNodesRepository) {
         node.attachments = attachments
         node.sha256hex = sha256Hex(body)
         val lastInHistory = if (node.history.isNotEmpty()) node.history.last() else  ""
-        if (stringSimilarity(lastInHistory, body) > 0.2)
+        if (lastInHistory != "" && body != "" && stringSimilarity(lastInHistory, body) > 0.2)
             node.history += body
+        if (lastInHistory == "" && body.length > 3) {
+            node.history += body
+        }
+        
         node.updateTimestamp = Clock.System.now()
         repo.updateNoteNode(node)
     }
