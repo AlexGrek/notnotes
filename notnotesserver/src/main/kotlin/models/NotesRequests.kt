@@ -17,5 +17,9 @@ data class RenameNodeRequest(
     val name: String,
     val id: String)
 
+data class MoveNodeRequest(
+    val target: String,
+    val id: String)
+
 @Serializable
 data class DeleteNodeRequest(val id: String)

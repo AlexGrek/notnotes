@@ -36,6 +36,13 @@ class NotesManager(private val repo: NoteNodesRepository) {
         repo.createNoteNodeSimple(newNode, parent, owner)
     }
 
+    suspend fun deleteNode(
+        id: String,
+        owner: String
+    ) {
+        repo.deleteNodeCascade(id, owner)
+    }
+
     suspend fun createDirectory(
         parent: String?,
         name: String,
@@ -73,5 +80,9 @@ class NotesManager(private val repo: NoteNodesRepository) {
         user: String
     ) {
         // TODO: check access
+    }
+
+    fun moveNode(id: String, target: String, user: String): Boolean {
+        throw NotImplementedError()
     }
 }

@@ -154,4 +154,31 @@ class NoteNodesRepository(
     suspend fun updateNoteNode(node: NoteNode): Boolean {
         return notesCollection.updateOneById(node.id, node).wasAcknowledged()
     }
+
+    private suspend fun deleteNodeAndChildren(id: Id<NoteNode>): Boolean {
+        val node = getNodeWithoutContentById(id)
+        node.children.forEach {
+            deleteNodeAndChildren(it)
+        }
+        return notesCollection.deleteOneById(id).wasAcknowledged()
+    }
+
+    suspend fun deleteNodeCascade(id: String, ownerEmail: String): Boolean {
+        val node = getNodeByStringId(id)
+        if (node.parent != null) {
+            val parent = getNodeByStringId(node.parent.toString())
+            parent.children -= node.id
+            updateNoteNode(parent)
+        } else {
+            val root = notesRootCollection.findOne(NoteRoot::owner eq ownerEmail)
+                ?: throw NoSuchElementException("Root for $ownerEmail not found")
+            root.rootNodes -= node.id
+            notesRootCollection.updateOneById(root.id, root)
+        }
+        node.children.forEach {
+            // do not care about parents as we are parent of all those children, and we will be deleted now
+            deleteNodeAndChildren(it)
+        }
+        return notesCollection.deleteOneById(node.id).wasAcknowledged()
+    }
 }

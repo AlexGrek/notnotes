@@ -12,6 +12,7 @@ import org.litote.kmongo.toId
 import org.notnotes.db.UserRepository
 import org.notnotes.models.CreateNoteRequest
 import org.notnotes.models.LoginRequest
+import org.notnotes.models.MoveNodeRequest
 import org.notnotes.models.NoteNode
 import org.notnotes.models.NotesManager
 import org.notnotes.models.UpdateNoteRequest
@@ -55,6 +56,24 @@ fun Route.notesRoutes() {
             val userEmail = principal?.payload?.getClaim("email")?.asString() ?: throw Exception("No user email in claims")
             val user = userRepo.findUserByEmail(userEmail) ?: throw Exception("User not found or disabled")
             val body = manager.fetchNoteBody(id, user.id.toString())
+            call.respond(body)
+        }
+
+        delete("/nodes") {
+            val principal = call.principal<UserPrincipal>()
+            val id = call.request.queryParameters["id"] ?: throw Exception("No ?id parameter")
+            val userEmail = principal?.payload?.getClaim("email")?.asString() ?: throw Exception("No user email in claims")
+            val user = userRepo.findUserByEmail(userEmail) ?: throw Exception("User not found or disabled")
+            val body = manager.deleteNode(id, user.id.toString())
+            call.respond(body)
+        }
+
+        post("/move_node") {
+            val request = call.receive<MoveNodeRequest>()
+            val principal = call.principal<UserPrincipal>()
+            val userEmail = principal?.payload?.getClaim("email")?.asString() ?: throw Exception("No user email in claims")
+            val user = userRepo.findUserByEmail(userEmail) ?: throw Exception("User not found or disabled")
+            val body = manager.moveNode(request.id, request.target, user.id.toString())
             call.respond(body)
         }
     }
