@@ -1,0 +1,85 @@
+# NotNotes Application Configuration
+app:
+  name: notnotes
+  image:
+    repository: notnotes-server
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  # Application settings
+  port: 8080
+  replicas: 2
+  
+  # JWT Configuration
+  jwt:
+    secret: "change-me-in-production"
+    issuer: "https://notnotes.dcommunity.space"
+    audience: "notnotes-users"
+    realm: "NotNotesApp"
+    domain: "https://notnotes.dcommunity.space"
+    expiration: "36000000"
+
+# MongoDB Configuration
+mongodb:
+  enabled: true
+  image:
+    repository: mongo
+    tag: "7.0"
+    pullPolicy: IfNotPresent
+  
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  
+  database: notnotes
+  port: 27017
+
+# Service Configuration
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+# Ingress Configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: notnotes.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Resource limits
+resources:
+  app:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  mongodb:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+# Autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001

@@ -170,3 +170,100 @@ check-git: ## Check git status (fails if working directory is dirty)
 		exit 1; \
 	fi
 	@echo "Git working directory is clean"
+
+
+# Helm targets
+HELM_CHART_PATH := deploy/notnotes
+HELM_RELEASE_NAME := notnotes
+HELM_NAMESPACE := default
+
+.PHONY: helm-install
+helm-install: ## Install Helm chart
+	@echo "Installing Helm chart $(HELM_RELEASE_NAME)..."
+	helm install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) \
+		--namespace $(HELM_NAMESPACE) \
+		--set app.image.repository=$(FULL_IMAGE_NAME) \
+		--set app.image.tag=$(VERSION)
+
+.PHONY: helm-upgrade
+helm-upgrade: build ## Build new image and upgrade/install Helm release
+	@echo "Upgrading/Installing Helm release $(HELM_RELEASE_NAME) with image $(FULL_IMAGE_NAME):$(VERSION)..."
+	helm upgrade --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) \
+		--namespace $(HELM_NAMESPACE) \
+		--set app.image.repository=$(FULL_IMAGE_NAME) \
+		--set app.image.tag=$(VERSION) \
+		--set app.jwt.secret="${JWT_SECRET:-dev-secret-key}" \
+		--wait --timeout=300s
+	@echo "Deployment complete! Image: $(FULL_IMAGE_NAME):$(VERSION)"
+
+.PHONY: helm-upgrade-prod
+helm-upgrade-prod: build ## Build and upgrade with production settings
+ifndef JWT_SECRET
+	@echo "Error: JWT_SECRET environment variable required for production deployment"
+	@exit 1
+endif
+	@echo "Upgrading production Helm release $(HELM_RELEASE_NAME)..."
+	helm upgrade --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) \
+		--namespace $(HELM_NAMESPACE) \
+		--set app.image.repository=$(FULL_IMAGE_NAME) \
+		--set app.image.tag=$(VERSION) \
+		--set app.jwt.secret="$(JWT_SECRET)" \
+		--set app.replicas=3 \
+		--set autoscaling.enabled=true \
+		--set mongodb.persistence.enabled=true \
+		--set mongodb.persistence.size=20Gi \
+		--wait --timeout=600s
+	@echo "Production deployment complete! Image: $(FULL_IMAGE_NAME):$(VERSION)"
+
+.PHONY: helm-uninstall
+helm-uninstall: ## Uninstall Helm release
+	@echo "Uninstalling Helm release $(HELM_RELEASE_NAME)..."
+	helm uninstall $(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-status
+helm-status: ## Show Helm release status
+	helm status $(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-logs
+helm-logs: ## Show logs from deployed pods
+	kubectl logs -l app=$(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE) -f
+
+.PHONY: helm-pods
+helm-pods: ## Show running pods
+	kubectl get pods -l app=$(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-services
+helm-services: ## Show services
+	kubectl get services -l app=$(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-port-forward
+helm-port-forward: ## Port forward to the application (8080:80)
+	@echo "Port forwarding to $(HELM_RELEASE_NAME) service..."
+	kubectl port-forward service/$(HELM_RELEASE_NAME)-service 8080:80 --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-debug
+helm-debug: ## Debug Helm chart rendering
+	helm template $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) \
+		--namespace $(HELM_NAMESPACE) \
+		--set app.image.repository=$(FULL_IMAGE_NAME) \
+		--set app.image.tag=$(VERSION)
+
+.PHONY: helm-values
+helm-values: ## Show current Helm values
+	helm get values $(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-rollback
+helm-rollback: ## Rollback to previous Helm release
+	@echo "Rolling back $(HELM_RELEASE_NAME)..."
+	helm rollback $(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-history
+helm-history: ## Show Helm release history
+	helm history $(HELM_RELEASE_NAME) --namespace $(HELM_NAMESPACE)
+
+# Combined targets
+.PHONY: deploy
+deploy: helm-upgrade ## Alias for helm-upgrade
+
+.PHONY: deploy-prod
+deploy-prod: helm-upgrade-prod ## Alias for helm-upgrade-prod

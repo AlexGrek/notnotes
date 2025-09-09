@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-config
+  labels:
+    app: {{ .Values.app.name }}
+data:
+  JWT_ISSUER: {{ .Values.app.jwt.issuer | quote }}
+  JWT_AUDIENCE: {{ .Values.app.jwt.audience | quote }}
+  JWT_REALM: {{ .Values.app.jwt.realm | quote }}
+  JWT_DOMAIN: {{ .Values.app.jwt.domain | quote }}
+  JWT_EXPIRATION: {{ .Values.app.jwt.expiration | quote }}
+  MONGODB_URI: "mongodb://{{ .Values.app.name }}-mongodb:{{ .Values.mongodb.port }}/{{ .Values.mongodb.database }}"
+  MONGODB_DATABASE_NAME: {{ .Values.mongodb.database | quote }}
+  PORT: {{ .Values.app.port | quote }}

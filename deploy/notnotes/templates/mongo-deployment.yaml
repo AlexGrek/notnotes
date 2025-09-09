@@ -1,0 +1,57 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-mongodb
+  labels:
+    app: {{ .Values.app.name }}-mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-mongodb
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: "{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}"
+        imagePullPolicy: {{ .Values.mongodb.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.mongodb.port }}
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        resources:
+          {{- toYaml .Values.resources.mongodb | nindent 10 }}
+        livenessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+      volumes:
+      - name: mongodb-data
+        {{- if .Values.mongodb.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.app.name }}-mongodb-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}
