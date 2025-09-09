@@ -84,7 +84,7 @@ const App = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.token) {
         setAuthToken(data.token)
         setUserId(data.userId || 'Authenticated User');
         setMessage(isLoginMode ? 'Login successful!' : 'Registration successful! Welcome to Notnotes.');
