@@ -49,7 +49,7 @@ data:
       listen 80;
 
       location /api/ {
-        proxy_pass http://{{ .Values.app.name }}-service:{{ .Values.service.targetPort }}/;
+        proxy_pass http://{{ .Values.app.name }}-service:{{ .Values.service.targetPort }};
       }
 
       location / {
