@@ -72,8 +72,8 @@ clean: ## Remove built images
 	-docker rmi $(FULL_IMAGE_NAME):latest
 	@echo "Images removed"
 
-.PHONY: helm-upgrade
-helm-upgrade: build ## Build new image and upgrade/install Helm release
+.PHONY: helm-upgrade-dev
+helm-upgrade-dev: build push ## Build new image and upgrade/install Helm release
 	@echo "Upgrading/Installing Helm release $(HELM_RELEASE_NAME) with image $(FULL_IMAGE_NAME):$(VERSION)..."
 	helm upgrade --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) \
 		--namespace $(HELM_NAMESPACE) \
@@ -84,7 +84,7 @@ helm-upgrade: build ## Build new image and upgrade/install Helm release
 	@echo "Deployment complete! Image: $(FULL_IMAGE_NAME):$(VERSION)"
 
 .PHONY: helm-upgrade-prod
-helm-upgrade-prod: build ## Build and upgrade with production settings
+helm-upgrade-prod: build push ## Build and upgrade with production settings
 	@if [ ! -f "$(JWT_SECRET_FILE)" ]; then \
 		echo "Error: JWT secret file '$(JWT_SECRET_FILE)' not found."; \
 		echo "Create the file with: echo 'your-production-secret' > $(JWT_SECRET_FILE)"; \
