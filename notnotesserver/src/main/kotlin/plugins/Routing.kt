@@ -11,6 +11,9 @@ fun Application.configureRouting() {
         get("/") {
             call.respondText("Welcome to NotNotes Sync Server!")
         }
+        get("/health") {
+            call.respondText("Welcome to NotNotes Sync Server!")
+        }
         // Group all API routes under /api/v1
         route("/api/v1/auth") {
             authRoutes()
