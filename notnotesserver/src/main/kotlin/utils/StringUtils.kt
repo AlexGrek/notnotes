@@ -46,3 +46,11 @@ private fun levenshteinDistance(str1: String, str2: String): Int {
 
     return matrix[len1][len2]
 }
+
+fun String.limitTo24(): String {
+    return if (this.length > 24) {
+        this.take(21) + "..."
+    } else {
+        this
+    }
+}

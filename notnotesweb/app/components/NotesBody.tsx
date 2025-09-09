@@ -159,7 +159,7 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
 
     if (loading) {
         return (
-            <div className="bg-gray-900 text-gray-100 p-6 rounded-lg min-h-96 flex items-center justify-center">
+            <div className="h-full bg-gray-900 text-gray-100 p-6 rounded-lg min-h-96 flex items-center justify-center">
                 <div className="flex items-center space-x-2">
                     <RefreshCw className="w-5 h-5 animate-spin" />
                     <span>Loading note {noteOpen?.name || 'unknown'}...</span>
@@ -170,7 +170,7 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
 
     if (error) {
         return (
-            <div className="bg-gray-900 text-gray-100 p-6 rounded-lg min-h-96">
+            <div className="h-full bg-gray-900 text-gray-100 p-6 rounded-lg min-h-96">
                 <div className="text-red-400 mb-4">Error: {error}</div>
                 <button
                     onClick={loadData}
@@ -184,7 +184,7 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
     }
 
     return (
-        <div className="bg-neutral-900 text-gray-100 rounded-lg overflow-hidden min-h-96 flex flex-col">
+        <div className="h-full bg-neutral-900 text-gray-100 rounded-lg overflow-hidden min-h-96 flex flex-col">
             {note && (
                 <div className="flex items-center gap-2 p-2 border-b border-gray-700">
                     <SyncStatusIcon state={syncState} />

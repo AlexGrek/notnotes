@@ -157,9 +157,9 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
         setCurrentNodes(targetNode?.children || []);
     };
 
-    if (loading) {
+    if (loading && currentNodes.length == 0) {
         return (
-            <div className="bg-neutral-900 text-gray-100 p-6 rounded-lg min-h-96 flex items-center justify-center">
+            <div className="bg-neutral-900 text-gray-100 p-6 rounded-lg min-h-96 flex items-center justify-center h-full">
                 <div className="flex items-center space-x-2">
                     <RefreshCw className="w-5 h-5 animate-spin" />
                     <span>Loading notes...</span>
@@ -170,7 +170,7 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
 
     if (error) {
         return (
-            <div className="bg-neutral-900 text-gray-100 p-6 rounded-lg min-h-96">
+            <div className="bg-neutral-900 text-gray-100 p-6 rounded-lg min-h-96 h-full">
                 <div className="text-red-400 mb-4">Error: {error}</div>
                 <button
                     onClick={loadData}
@@ -184,11 +184,11 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
     }
 
     return (
-        <div className="bg-neutral-900 text-gray-100 rounded-lg overflow-hidden min-h-96 flex flex-col">
+        <div className="h-full bg-neutral-900 text-gray-100 rounded-lg overflow-hidden">
             {/* Header with path and navigation */}
-            <div className="bg-neutral-800 border-b border-neutral-700 p-4">
+            <div className="bg-neutral-800 border-b border-neutral-700 p-2">
                 <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-wrap">
                         {currentPath.length > 0 && (
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
@@ -238,7 +238,6 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
                         className="flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-700 transition-colors duration-200"
                     >
                         <Home className="w-4 h-4" />
-                        <span>Root</span>
                     </button>
 
                     {currentPath.map((pathItem, index) => (
@@ -281,7 +280,7 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
             </div>
 
             {/* File browser content */}
-            <div className="p-4 flex-grow">
+            <div className="max-h-full scroll-auto p-3">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentPath.map(p => p.id).join('/')}
@@ -289,7 +288,7 @@ export default function NotesBrowser({ onNoteClicked }: NotesBrowserProps) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-2"
+                        className="space-y-2 max-h-full"
                     >
                         {currentNodes.length === 0 ? (
                             <div className="text-gray-500 text-center py-8">

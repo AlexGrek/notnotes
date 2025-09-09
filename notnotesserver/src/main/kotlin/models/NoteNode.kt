@@ -11,6 +11,7 @@ import org.bson.types.ObjectId
 import org.litote.kmongo.Id
 import org.litote.kmongo.newId
 import org.notnotes.auth.sha256Hex
+import org.notnotes.utils.limitTo24
 
 @Serializable
 enum class AccessLevel {
@@ -69,7 +70,10 @@ data class NoteRecord(
     var history: List<String> = emptyList(), // List of previous versions of 'data'
     var attachments: List<String> = emptyList(), // List of attachment identifiers
     var updateTimestamp: Instant = Clock.System.now(), // Timestamp of the note's own content modification
-    var sha256hex: String = sha256Hex(data ?: "")
+    var sha256hex: String = sha256Hex(data ?: ""),
+    var preview: String = data?.limitTo24() ?: "",
+    var tags: List<String> = emptyList(),
+    var isE2Encrypted: Boolean = false,
 ) : NoteNode()
 
 /**

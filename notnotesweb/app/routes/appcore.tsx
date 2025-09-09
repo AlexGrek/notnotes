@@ -18,7 +18,7 @@ const Home: React.FC = () => {
     const [noteOpen, setNoteOpen] = useState<NoteRecordRepresentation | null>(null)
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans p-2">
+    <div className="max-h-screen bg-neutral-950 text-neutral-200 font-sans p-1">
       {/* Header */}
       <motion.header
         initial={{ y: -50, opacity: 0 }}
@@ -38,10 +38,9 @@ const Home: React.FC = () => {
       </motion.header>
 
       {/* Main Content */}
-      <main className="flex gap-2">
-        <div className="max-w-xs w-full"><NotesBrowser onNoteClicked={(note) => setNoteOpen(note)}></NotesBrowser></div>
-        <div className="flex-1"><NotesBody noteOpen={noteOpen}/></div>
-        
+      <main className="flex gap-2 h-full overflow-hidden">
+        <div className="max-w-xs w-full h-full"><NotesBrowser onNoteClicked={(note) => setNoteOpen(note)}></NotesBrowser></div>
+        <div className="flex-1 h-full"><NotesBody noteOpen={noteOpen}/></div>
       </main>
     </div>
   );
