@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: {{ .Values.app.name }}-frontend
   labels:
-    app: {{ .Values.app.name }}
+    app: {{ .Values.app.name }}-frontend
 spec:
   replicas: {{ .Values.app.replicas }}
   selector:
     matchLabels:
-      app: {{ .Values.app.name }}
+      app: {{ .Values.app.name }}-frontend
   template:
     metadata:
       labels:
-        app: {{ .Values.app.name }}
+        app: {{ .Values.app.name }}-frontend
     spec:
       containers:
         - name: react-router-ssr

@@ -102,6 +102,8 @@ helm-upgrade-dev: build push build-front push-front ## Build new image and upgra
 		--namespace $(HELM_NAMESPACE) \
 		--set app.image.repository=$(FULL_IMAGE_NAME) \
 		--set app.image.tag=$(VERSION) \
+		--set frontend.image.repository=$(FULL_IMAGE_NAME_FRONT) \
+		--set frontend.image.tag=$(VERSION) \
 		--set app.jwt.secret="$${JWT_SECRET:-dev-secret-key}" \
 		--wait --timeout=300s
 	@echo "Deployment complete! Image: $(FULL_IMAGE_NAME):$(VERSION)"
@@ -120,6 +122,8 @@ helm-upgrade-prod: build push build-front push-front ## Build and upgrade with p
 		--namespace $(HELM_NAMESPACE) \
 		--set app.image.repository=$(FULL_IMAGE_NAME) \
 		--set app.image.tag=$(VERSION) \
+		--set frontend.image.repository=$(FULL_IMAGE_NAME_FRONT) \
+		--set frontend.image.tag=$(VERSION) \
 		--set app.jwt.secret="$(JWT_SECRET)" \
 		--set app.replicas=1 \
 		--set autoscaling.enabled=true \
