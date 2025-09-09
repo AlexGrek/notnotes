@@ -8,7 +8,7 @@ app:
   
   # Application settings
   port: 8080
-  replicas: 2
+  replicas: 1
   
   # JWT Configuration
   jwt:
@@ -18,6 +18,15 @@ app:
     realm: "NotNotesApp"
     domain: "https://notnotes.dcommunity.space"
     expiration: "36000000"
+
+# Frontend with SPA (react-router framework)
+frontend:
+  enabled: true
+  image:
+    repository: notnotes-react-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
 
 # MongoDB Configuration
 mongodb:
@@ -29,7 +38,7 @@ mongodb:
   
   persistence:
     enabled: true
-    size: 10Gi
+    size: 1Gi
     storageClass: "hostpath-with-resize"
   
   database: notnotes
@@ -74,9 +83,9 @@ resources:
 # Autoscaling
 autoscaling:
   enabled: false
-  minReplicas: 2
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 70
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 30
 
 # Security Context
 securityContext:

@@ -2,6 +2,7 @@
 
 # Variables (all can be overridden)
 IMAGE_NAME ?= notnotes-server
+IMAGE_NAME_FRONT ?= notnotes-react-frontend
 REGISTRY ?= localhost:5000
 GIT_HASH ?= $(shell git rev-parse --short HEAD)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
@@ -11,6 +12,7 @@ VERSION ?= $(GIT_HASH)$(GIT_DIRTY)
 
 # Full image name with registry (if set)
 FULL_IMAGE_NAME ?= $(if $(REGISTRY),$(REGISTRY)/$(IMAGE_NAME),$(IMAGE_NAME))
+FULL_IMAGE_NAME_FRONT ?= $(if $(REGISTRY),$(REGISTRY)/$(IMAGE_NAME_FRONT),$(IMAGE_NAME))
 
 # Helm targets
 HELM_CHART_PATH ?= deploy/notnotes
@@ -37,6 +39,18 @@ info: ## Show build information
 	@echo "  Build Date:    $(BUILD_DATE)"
 	@echo "  Registry:      $(REGISTRY)"
 
+.PHONY: build-front
+build-front: ## Build Docker image with git hash tag
+	@echo "Building $(FULL_IMAGE_NAME_FRONT):$(VERSION)..."
+	docker build \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg GIT_HASH="$(GIT_HASH)" \
+		--build-arg GIT_BRANCH="$(GIT_BRANCH)" \
+		-t $(FULL_IMAGE_NAME_FRONT):$(VERSION) \
+		-t $(FULL_IMAGE_NAME_FRONT):latest \
+		notnotesweb
+	@echo "Successfully built $(FULL_IMAGE_NAME_FRONT):$(VERSION)"
+
 .PHONY: build
 build: ## Build Docker image with git hash tag
 	@echo "Building $(FULL_IMAGE_NAME):$(VERSION)..."
@@ -48,6 +62,13 @@ build: ## Build Docker image with git hash tag
 		-t $(FULL_IMAGE_NAME):latest \
 		.
 	@echo "Successfully built $(FULL_IMAGE_NAME):$(VERSION)"
+
+.PHONY: push-front
+push-front: ## Push image to registry
+	@echo "Pushing $(FULL_IMAGE_NAME_FRONT):$(VERSION)..."
+	docker push $(FULL_IMAGE_NAME_FRONT):$(VERSION)
+	docker push $(FULL_IMAGE_NAME_FRONT):latest
+	@echo "Successfully pushed $(FULL_IMAGE_NAME_FRONT):$(VERSION) and latest"
 
 .PHONY: push
 push: ## Push image to registry
@@ -70,6 +91,8 @@ clean: ## Remove built images
 	@echo "Removing images..."
 	-docker rmi $(FULL_IMAGE_NAME):$(VERSION)
 	-docker rmi $(FULL_IMAGE_NAME):latest
+	-docker rmi $(FULL_IMAGE_NAME_FRONT):$(VERSION)
+	-docker rmi $(FULL_IMAGE_NAME_FRONT):latest
 	@echo "Images removed"
 
 .PHONY: helm-upgrade-dev
@@ -101,7 +124,7 @@ helm-upgrade-prod: build push ## Build and upgrade with production settings
 		--set app.replicas=1 \
 		--set autoscaling.enabled=true \
 		--set mongodb.persistence.enabled=true \
-		--set mongodb.persistence.size=20Gi \
+		--set mongodb.persistence.size=2Gi \
 		--wait --timeout=600s
 	@echo "Production deployment complete! Image: $(FULL_IMAGE_NAME):$(VERSION)"
 
