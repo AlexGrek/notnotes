@@ -84,11 +84,15 @@ const App = () => {
 
       const data = await response.json();
 
-      if (response.ok && data.token) {
+      if (response.ok && (isLoginMode || data.token)) {
         setAuthToken(data.token)
         setUserId(data.userId || 'Authenticated User');
         setMessage(isLoginMode ? 'Login successful!' : 'Registration successful! Welcome to Notnotes.');
-        navigate("/core")
+        if (isLoginMode)
+          navigate("/core")
+        else {
+          setIsLoginMode(false)
+        }
       } else {
         setMessage(`Error: ${data.message || 'An unexpected error occurred.'}`);
         setUserId(null);
