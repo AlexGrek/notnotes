@@ -6,6 +6,7 @@ import org.litote.kmongo.id.WrappedObjectId
 import org.notnotes.auth.sha256Hex
 import org.notnotes.db.NoteNodesRepository
 import org.litote.kmongo.toId
+import org.notnotes.CompositeException
 import org.notnotes.utils.stringSimilarity
 
 class NotesManager(private val repo: NoteNodesRepository) {
@@ -16,6 +17,59 @@ class NotesManager(private val repo: NoteNodesRepository) {
     suspend fun fetchNoteBody(note: String, user: String): NoteNode {
         // todo: check access rights
         return repo.getNodeByStringId(note)
+    }
+
+    suspend fun shareNote(
+        id: String,
+        owner: String,
+        sharedWith: Map<String, AccessLevel>
+    ): Map<String, AccessLevel> {
+        val item = repo.getNodeByStringId(id);
+        if (item.sharedWith == sharedWith) {
+            return item.sharedWith
+        }
+
+        val unshared = item.sharedWith.keys - sharedWith.keys
+        val sharedNew = sharedWith.keys - item.sharedWith.keys
+
+        val errors = mutableListOf<Throwable>()
+
+        for (shareTo in unshared) {
+            try {
+                repo.removeFromShared(shareTo, item.id)
+            } catch (e: Throwable) {
+                errors.add(e)
+            }
+        }
+
+        if (errors.isNotEmpty()) {
+            throw CompositeException(errors)
+        }
+
+        val added = mutableMapOf<String, AccessLevel>()
+
+        for (shareTo in sharedNew - owner) {
+            try {
+                repo.addToShared(shareTo, item.id)
+                added[shareTo] = sharedWith[shareTo] !!
+            } catch (e: Throwable) {
+                errors.add(e)
+            }
+        }
+
+        if (errors.isNotEmpty()) {
+            try {
+                repo.updateNoteNode(item)
+                item.sharedWith += added
+                return item.sharedWith
+            } finally {
+                throw CompositeException(errors)
+            }
+        }
+
+        repo.updateNoteNode(item)
+        item.sharedWith = sharedWith
+        return item.sharedWith
     }
 
     suspend fun createNote(

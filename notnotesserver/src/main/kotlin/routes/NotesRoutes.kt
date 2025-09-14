@@ -10,6 +10,7 @@ import org.notnotes.db.UserRepository
 import org.notnotes.models.CreateNoteRequest
 import org.notnotes.models.MoveNodeRequest
 import org.notnotes.models.NotesManager
+import org.notnotes.models.ShareNoteRequest
 import org.notnotes.models.UpdateNoteRequest
 import org.notnotes.plugins.UserPrincipal
 
@@ -52,7 +53,7 @@ fun Route.notesRoutes() {
             val user = call.getAuthenticatedUser()
             val id = call.request.queryParameters["id"]
                 ?: throw IllegalArgumentException("Missing required 'id' query parameter.")
-            val body = manager.fetchNoteBody(id, user.id.toString())
+            val body = manager.fetchNoteBody(id, user.email)
             call.respond(body)
         }
 
@@ -60,14 +61,23 @@ fun Route.notesRoutes() {
             val user = call.getAuthenticatedUser()
             val id = call.request.queryParameters["id"]
                 ?: throw IllegalArgumentException("Missing required 'id' query parameter.")
-            val body = manager.deleteNode(id, user.id.toString())
+            val body = manager.deleteNode(id, user.email)
             call.respond(body)
         }
 
         post("/move_node") {
             val request = call.receive<MoveNodeRequest>()
             val user = call.getAuthenticatedUser()
-            val body = manager.moveNode(request.id, request.target, user.id.toString())
+            val body = manager.moveNode(request.id, request.target, user.email)
+            call.respond(body)
+        }
+
+        post("/share") {
+            val request = call.receive<ShareNoteRequest>()
+            val id = call.request.queryParameters["id"]
+                ?: throw IllegalArgumentException("Missing required 'id' query parameter.")
+            val user = call.getAuthenticatedUser()
+            val body = manager.shareNote(id, user.email, request.sharedWith)
             call.respond(body)
         }
     }

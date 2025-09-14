@@ -157,9 +157,19 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
     }, [data, note?.name, sendData]); // Rerun whenever the content or title changes
 
 
-    if (loading) {
+    if (noteOpen == null) {
         return (
-            <div className="h-full bg-gray-900 text-gray-100 p-6 rounded-lg min-h-96 flex items-center justify-center">
+            <div className="h-full bg-gray-900 text-gray-100 p-6 rounded-lg flex items-center justify-center">
+                <div className="flex items-center space-x-2">
+                    <span>Choose a note</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading && noteOpen) {
+        return (
+            <div className="h-full bg-gray-900 text-gray-100 p-6 rounded-lg flex items-center justify-center">
                 <div className="flex items-center space-x-2">
                     <RefreshCw className="w-5 h-5 animate-spin" />
                     <span>Loading note {noteOpen?.name || 'unknown'}...</span>
@@ -184,7 +194,7 @@ export default function NotesBody({ noteOpen }: NotesBrowserProps) {
     }
 
     return (
-        <div className="h-full bg-neutral-900 text-gray-100 rounded-lg overflow-hidden min-h-96 flex flex-col">
+        <div className="h-full bg-neutral-900 text-gray-100 rounded-lg overflow-hidden flex flex-col">
             {note && (
                 <div className="flex items-center gap-2 p-2 border-b border-gray-700">
                     <SyncStatusIcon state={syncState} />

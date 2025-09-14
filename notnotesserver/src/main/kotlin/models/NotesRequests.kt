@@ -23,3 +23,6 @@ data class MoveNodeRequest(
 
 @Serializable
 data class DeleteNodeRequest(val id: String)
+
+@Serializable
+data class ShareNoteRequest(val sharedWith: Map<String, AccessLevel>)

@@ -51,4 +51,12 @@ fun Route.authRoutes() {
             call.respondText("Hello, authenticated user: $userEmail!")
         }
     }
+
+    authenticate("jwt-auth") {
+        get("/whoami") {
+            val principal = call.principal<UserPrincipal>()
+            val userEmail = principal?.payload?.getClaim("email")?.asString()
+            call.respond(WhoamiResponse(userEmail ?: "null"))
+        }
+    }
 }

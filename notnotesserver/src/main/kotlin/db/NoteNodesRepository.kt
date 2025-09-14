@@ -85,6 +85,19 @@ class NoteNodesRepository(
         return notesRootCollection.findOne(NoteRoot::owner eq user)
     }
 
+    suspend fun addToShared(user: String, id: Id<NoteNode>) {
+        val root = getUserNotesRoot(user) ?: throw NoSuchElementException("Root for $user not found")
+        root.sharedNodes += id
+        println("Note shared with user $user")
+        notesRootCollection.updateOneById( root.id, root)
+    }
+
+    suspend fun removeFromShared(user: String, id: Id<NoteNode>) {
+        val root = getUserNotesRoot(user) ?: throw NoSuchElementException("Root for $user not found")
+        root.sharedNodes -= id
+        notesRootCollection.updateOneById( root.id, root)
+    }
+
     suspend fun getNodeById(id: Id<NoteNode>): NoteNode {
         return notesCollection.findOneById(id)
             ?: throw NoSuchElementException("Node with id $id not found")
